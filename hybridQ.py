@@ -3,13 +3,13 @@ import random
 
 def read():
 
-    infile = open('drive/MyDrive/Colab Notebooks/eil51.tsp', 'r')
+    infile = open('tsplib/eil51.tsp', 'r')
 
     Name = infile.readline().strip().split()[2] # NAME
-    #FileType = infile.readline().strip().split()[2] # TYPE
-    #Comment = infile.readline().strip().split()[2] # COMMENT
+    infile.readline().strip().split()[2] # TYPE
+    infile.readline().strip().split()[2] # COMMENT
     Dimension = infile.readline().strip().split()[2] # DIMENSION
-    #EdgeWeightType = infile.readline().strip().split()[2] # EDGE_WEIGHT_TYPE
+    infile.readline().strip().split()[2] # EDGE_WEIGHT_TYPE
     infile.readline()
     print(Name)
     print(Dimension)
@@ -27,6 +27,7 @@ cities = read()
 num_cities = len(cities)
 distances = np.zeros((num_cities, num_cities))
 
+# Calculate the Euclidean distance between each pair of cities
 for i in range(num_cities):
     for j in range(num_cities):
         x1, y1 = cities[i]
@@ -47,18 +48,20 @@ num_local_search_iterations = 20
 
 def choose_next_city(current_city, allowed_cities, q_table):
     if random.random() < epsilon:
+        # Explore
         return random.choice(allowed_cities)
     else:
+        # Exploit
         q_values = q_table[current_city, allowed_cities]
         return allowed_cities[np.argmax(q_values)]
-
 
 def update_q_table(q_table, path, rewards):
     for i in range(num_cities - 1):
         current_city = path[i]
         next_city = path[i + 1]
+        # Compute the updated Q-value using the discount factor and the learning rate
+        #q_table[current_city, next_city] += alpha * (rewards + gamma * np.max(q_table[next_city]) - q_table[current_city, next_city])
         q_table[current_city, next_city] += alpha * (rewards - q_table[current_city, next_city])
-
 
 def calculate_path_length(path):
     path_length = 0
@@ -106,13 +109,14 @@ def local_search_2opt(path):
 
 
 # Q-learning with ant colony optimization
-q_table = np.zeros((num_cities, num_cities))
+q_table = np.zeros((num_cities, num_cities))  
 pheromones = np.ones((num_cities, num_cities))
 
 for iteration in range(num_iterations):
     best_path_length = float('inf')
     best_path = []
 
+    # Generate paths for each ant
     for ant in range(num_ants):
         current_city = random.randint(0, num_cities - 1)
         visited_cities = set([current_city])
