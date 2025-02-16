@@ -14,9 +14,9 @@ def read():
     print(Name)
     print(Dimension)
 
+    nodelist = np.empty(shape=(int(Dimension),2))
     N = int(Dimension)
-    nodelist = np.empty(shape=(N,2))
-    for i in range(0, N):
+    for i in range(0, int(Dimension)):
         x,y = infile.readline().strip().split()[1:]
         nodelist[i] = [x,y]
 
@@ -27,7 +27,6 @@ cities = read()
 num_cities = len(cities)
 distances = np.zeros((num_cities, num_cities))
 
-# Calculate the Euclidean distance between each pair of cities
 for i in range(num_cities):
     for j in range(num_cities):
         x1, y1 = cities[i]
@@ -48,20 +47,18 @@ num_local_search_iterations = 20
 
 def choose_next_city(current_city, allowed_cities, q_table):
     if random.random() < epsilon:
-        # Explore
         return random.choice(allowed_cities)
     else:
-        # Exploit
         q_values = q_table[current_city, allowed_cities]
         return allowed_cities[np.argmax(q_values)]
+
 
 def update_q_table(q_table, path, rewards):
     for i in range(num_cities - 1):
         current_city = path[i]
         next_city = path[i + 1]
-        # Compute the updated Q-value using the discount factor and the learning rate
-        #q_table[current_city, next_city] += alpha * (rewards + gamma * np.max(q_table[next_city]) - q_table[current_city, next_city])
         q_table[current_city, next_city] += alpha * (rewards - q_table[current_city, next_city])
+
 
 def calculate_path_length(path):
     path_length = 0
@@ -109,14 +106,13 @@ def local_search_2opt(path):
 
 
 # Q-learning with ant colony optimization
-q_table = np.zeros((num_cities, num_cities))  
+q_table = np.zeros((num_cities, num_cities))
 pheromones = np.ones((num_cities, num_cities))
 
 for iteration in range(num_iterations):
     best_path_length = float('inf')
     best_path = []
 
-    # Generate paths for each ant
     for ant in range(num_ants):
         current_city = random.randint(0, num_cities - 1)
         visited_cities = set([current_city])

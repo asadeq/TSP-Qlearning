@@ -3,7 +3,7 @@ import random
 
 def read():
 
-    infile = open('tsplib/eil51.tsp', 'r')
+    infile = open('tsplib/ts225.tsp', 'r')
 
     Name = infile.readline().strip().split()[2] # NAME
     infile.readline().strip().split()[2] # TYPE
@@ -45,29 +45,33 @@ def calculate_path_length(path):
 def cost_heursitic(path):
     return 1.0 / calculate_path_length(path)
 
-def calculate_edge_desirability(current_city, next_city, pheromones, q_table):
+def calculate_edge_desirability(current_city, next_city, pheromones, q_table, mode=0):
     phermone_comp = pheromones[current_city][next_city]**delta
     distance_comp = cost_heursitic([current_city, next_city])**beta
     qlearning_comp = q_table[current_city][next_city]**mu
-    return phermone_comp * distance_comp * qlearning_comp
+
+    if mode == 0:
+        return phermone_comp * distance_comp * qlearning_comp
+    elif mode == 1:
+        return phermone_comp * distance_comp
+    elif mode == 2:
+        return qlearning_comp
 
 def choose_next_city(current_city, allowed_cities, q_table, pheromones, epsilon):
-    edge_desirabilities = [calculate_edge_desirability(current_city, next_city, pheromones, q_table) for next_city in allowed_cities]
+    desirabilities = [calculate_edge_desirability(current_city, next_city, pheromones, q_table, 0) for next_city in allowed_cities]
     if random.random() < epsilon:
-        # Explore (random)
-        #return random.choice(allowed_cities)
         # Explore weighted by edge desirability        
-        edge_desirabilities = np.array(edge_desirabilities)
-        edge_desirabilities /= edge_desirabilities.sum()
-        return np.random.choice(allowed_cities, p=edge_desirabilities)
+        desirabilities = np.array(desirabilities)
+        desirabilities /= desirabilities.sum()
+        return np.random.choice(allowed_cities, p=desirabilities)
     else:
         # Exploit by highest edge desirability
-        return allowed_cities[np.argmax(edge_desirabilities)]
+        return allowed_cities[np.argmax(desirabilities)]
 
 # Compute the updated Q-value using the discount factor and the learning rate
 def update_q_table(q_table, s, a, alpha):
     rewards =  1 / distances[s][a]
-    q_table[s, a] += alpha * (rewards + gamma * np.max(q_table[a]) - q_table[s, a])
+    q_table[s, a] += alpha * (rewards + gamma * np.max(q_table[a,:]) - q_table[s, a])
 
 def update_pheromones(pheromones, paths):
     delta_pheromones = np.zeros((num_cities, num_cities))
@@ -109,7 +113,7 @@ def hybrid_qaco(alpha, epsilon):
     q_table = np.ones((num_cities, num_cities))  
     pheromones = np.ones((num_cities, num_cities))
 
-    for iteration in range(num_iterations):
+    for episode in range(num_episodes):
         best_path_length = float('inf')
         best_path = []
 
@@ -157,8 +161,8 @@ def hybrid_qaco(alpha, epsilon):
         update_pheromones(pheromones, [best_path])
 
         # Decay Q-learning rate
-        alpha *= 1.0 / (1.0 + alpha_decay_rate * iteration)
-        epsilon *= 1.0 / (1.0 + epsilon_decay_rate * iteration)
+        alpha *= 1.0 / (1.0 + alpha_decay_rate * episode)
+        epsilon = max(epsilon_min, epsilon - epsilon_decay_rate)
 
         # Update Q-table using an incremental update rule
         # for i in range(num_cities - 1):
@@ -176,24 +180,24 @@ alpha = 0.5  # Learning rate
 alpha_decay_rate = 0.005  # Learning rate decay
 gamma = 0.95  # Discount factor
 epsilon = 1.0  # Exploration rate
-epsilon_min = 0.05  # Minimum exploration rate
+epsilon_min = 0.005  # Minimum exploration rate
 epsilon_decay_rate = 0.01  # Exploration rate decay
 
 # Ant colony optimization parameters
 num_ants = 20
-num_iterations = 100
-rho = 0.1  # Evaporation rate
-w_reward = 2
+num_episodes = 100
+rho = 0.3  # Evaporation rate
+w_reward = 10
 
 # Local search parameters (for 2-opt)
-num_local_search_iterations = 2        #2
+num_local_search_iterations = 20        #2
 
 # Q-learning with ant colony optimization
-mu = 1 # Q-learning factor
+mu = 2 # Q-learning factor
 delta = 1  # Pheromone factor
-beta = 1 # Heuristic factor
+beta = 3 # Heuristic factor
 
-num_trials = 2
+num_trials = 1
 optimal_paths = []
 optimal_path_lengths = []
 for trial in range(num_trials):
