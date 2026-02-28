@@ -12,7 +12,7 @@ class AntQ:
         np.fill_diagonal(self.distances, np.inf) # Prevent self-loops
         self.n = len(self.distances)
         
-        # Number of agents: defaults to number of cities if not specified 
+        # Number of agen: defaults to number of cities if not specified 
         self.m = m if m is not None else self.n
         
         # Parameters
